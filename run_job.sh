@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Folder containing the .inp files
-WORKDIR="/home/duminy/Documents/01_Converter_Simulation/jobs"
+WORKDIR="/home/duminy/Documents/02_Creep/jobs"
 
 # Abaqus scratch folder
-SCRATCHDIR="/home/duminy/Documents/01_Converter_Simulation/scratch"
+SCRATCHDIR="/home/duminy/Documents/02_Creep/scratch"
 
 cd "$WORKDIR" || exit 1
 
