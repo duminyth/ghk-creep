@@ -26,7 +26,9 @@ do
     echo "Input file: $inpfile"
     echo "========================================"
 
-    abaqus job="$jobname" input="$inpfile" scratch="$SCRATCHDIR" cpus=4 interactive
+    abaqus job="$jobname" input="$inpfile" \
+    user="/home/duminy/Documents/02_Creep//umat_dp_norton_bailey.f",\
+    scratch="$SCRATCHDIR" cpus=4 interactive > "${jobname}.log" 2>&1
 
     echo
     echo "Finished job: $jobname"
