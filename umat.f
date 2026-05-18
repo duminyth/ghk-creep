@@ -104,6 +104,7 @@
 ! --- Materialparameter ---
       DOUBLE PRECISION E, NU, ALPHA_DP, K_COH, PSI_DP
       DOUBLE PRECISION A_CR, N_CR, M_CR
+      DOUBLE PRECISION ECR0
 !     PSI_DP is the dilatency parameter in the DP plastic potential
 !     K is the coehsive-related yield stress 
 
@@ -131,6 +132,7 @@
 
 ! --- Kriechgroessen ---
       DOUBLE PRECISION EPBAR_CR, DECR_BAR
+      DOUBLE PRECISION ECR_EFF_MID
 !     EPBAR_CR  is the accumulated equivalent creep strain
 !     DECR_BAR is the increment of EPBAR_CR in the step
 
@@ -182,6 +184,7 @@
       A_CR     = PROPS(6)
       N_CR     = PROPS(7)
       M_CR     = PROPS(8)   ! Erwartet M_CR <= 0 fuer Verfestigung
+      ECR0     = PROPS(9)
 
 !     Assoziierte Flieβregel falls PSI=0
       IF (DABS(PSI_DP) .LT. TOL_PL) PSI_DP = ALPHA_DP
@@ -206,7 +209,9 @@
       EPBAR_CR = STATEV(2)
 
 !     Schutz: Kriechdehnung darf nicht negativ oder null sein
-      IF (EPBAR_CR .LT. ECR_MIN) EPBAR_CR = ECR_MIN
+!     change from EPBAR_CR = ECR_MIN to EPBAR_CR = 0
+      IF (EPBAR_CR .LT. ECR_MIN) EPBAR_CR = ZERO 
+
 
 !=======================================================================
 !  3. ELASTISCHE STEIFIGKEITSMATRIX
@@ -294,12 +299,13 @@
 !       Startwert: explizites Euler-Inkrement (Vorschaetzung)
         Q_MID   = Q_TR
         ECR_MID = EPBAR_CR
+        ECR_EFF_MID = ECR_MID + ECR0
 
 !       Make sure the creep strain is strictely positive
-        IF (ECR_MID .LT. ECR_MIN) ECR_MID = ECR_MIN
+        IF (ECR_MID .LT. ECR_MIN) ECR_EFF_MID  = ECR_MIN
 
 !       Define the increment of accumulated equivalent creep strain in the step
-        DECR_BAR = A_CR * (Q_MID**N_CR) * (ECR_MID**M_CR) * DTIME
+        DECR_BAR = A_CR * (Q_MID**N_CR) * (ECR_EFF_MID **M_CR) * DTIME
 
 !       Schutz: Decr_bar nicht groesser als q/(3*MU) (verhindert q<0)
 !       Safety: prevent the vM stress to be negative by reducing the strain -> prevent overshooting 
@@ -313,13 +319,14 @@
 !         Midpoint-Groessen
           Q_MID   = Q_TR - THREE*MU*DECR_BAR
           ECR_MID = EPBAR_CR + HALF*DECR_BAR
+          ECR_EFF_MID = ECR_MID + ECR0
 
 !         Schutz gegen negative Werte
           IF (Q_MID   .LT. TOL_CR)  Q_MID   = TOL_CR
-          IF (ECR_MID .LT. ECR_MIN) ECR_MID = ECR_MIN
+          IF (ECR_EFF_MID  .LT. ECR_MIN) ECR_EFF_MID  = ECR_MIN
 
 !         Kriechrate am Midpoint
-          ECRDOT_OLD = A_CR * (Q_MID**N_CR) * (ECR_MID**M_CR)
+          ECRDOT_OLD = A_CR * (Q_MID**N_CR) * (ECR_EFF_MID **M_CR)
 
 !         Residuum: R = Decr_bar - ecr_dot * Dt
           RES = DECR_BAR - ECRDOT_OLD * DTIME
@@ -336,9 +343,9 @@
 !         Compute the derivative of the residual with respect to DECR_BAR -> Jacobian of the NR algorithm
           DRES = ONE - DTIME * (
      1      A_CR * N_CR * (Q_MID**(N_CR-ONE)) * (-THREE*MU)
-     2                 * (ECR_MID**M_CR)
+     2                 * (ECR_EFF_MID**M_CR)
      3    + A_CR * (Q_MID**N_CR)
-     4           * M_CR * (ECR_MID**(M_CR-ONE)) * HALF )
+     4           * M_CR * (ECR_EFF_MID**(M_CR-ONE)) * HALF )
 
 
 !         Numerischer Schutz: Jacobian nicht zu klein
