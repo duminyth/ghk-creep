@@ -1,7 +1,7 @@
 
 
 
-#abaqus cae noGUI=G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/Script/inp_unitcell_2d.py
+#abaqus cae noGUI=C:\Users\p2515497\Documents\ghk-creep\ghk-creep/inp_unitcell_2d.py
 
 
 # -*- coding: mbcs -*-
@@ -18,7 +18,11 @@ from job import *
 from sketch import *
 from visualization import *
 from connectorBehavior import *
+
 import os 
+import matplotlib.pyplot as plt
+from matplotlib.patches import Polygon
+import numpy as np
 
 def ABQ_model(dt_loc):
 	
@@ -163,14 +167,80 @@ def ABQ_model(dt_loc):
 	
 	mdb.jobs[jobname].writeInput(consistencyChecking=OFF)
 	
+
+def PostProcess(odb):
+	odbNew = str(path+odb[:-4])+'.odb'
+	odb_object = openOdb(odbNew)
+	session.viewports['Viewport: 1'].setValues(displayedObject=odb_object)
+	V = (('SDV1', INTEGRATION_POINT),('SDV2', INTEGRATION_POINT),('SDV3', INTEGRATION_POINT),('SDV4', INTEGRATION_POINT))
+	xyd = session.xyDataListFromField(odb = odb_object, outPosition=NODAL, variable = V, nodeSets = (RBM,))
+	sdv1 = [[y for x,y in XY] for XY in xyd if XY.name=='SDV1']
+	sdv2 = [[y for x,y in XY] for XY in xyd if XY.name=='SDV2']
+	sdv3 = [[y for x,y in XY] for XY in xyd if XY.name=='SDV3']
+	sdv4 = [[y for x,y in XY] for XY in xyd if XY.name=='SDV4']
+	t 	 = [[x for x,y in XY] for XY in xyd if XY.name=='SDV4']
+
+	return t,sdv1, sdv2, sdv3,sdv4
+
+
+def Plot_Pq(p,q,titel):
 	
+	cm = 1 / 2.54
+	fig, ax = plt.subplots(figsize=(8*cm, 7*cm))
+
+	ax.plot((0,2),(0,2*np.tan(np.radians(71.57))),'-k')
+	ax.plot((0,0),(0,2*np.tan(np.radians(71.57))),'-k')
+	ax.plot((0,2*np.tan(np.radians(71.57))),(0,0),'-k')
+
+	ax.text(2,2, 'Multi axial compression')
+	ax.text(0.1,6.5, 'Shear-compression')
+
+	points = [[0,0], [2,2*np.tan(np.radians(71.57))], [0, 6]]
+	triangle = Polygon(points, fc=(1, 0, 0, 0.5), ec='red', lw=0)
+	ax.add_patch(triangle)
+
+	points = [[0,0], [2,2*np.tan(np.radians(71.57))], [6,0]]
+	triangle2 = Polygon(points, fc=(0, 0, 1, 0.5), ec='blue', lw=0)
+	ax.add_patch(triangle2)
+	points = [[6,6], [2,2*np.tan(np.radians(71.57))], [6,0]]
+	triangle2 = Polygon(points, fc=(0, 0, 1, 0.5), ec='blue', lw=0)
+	ax.add_patch(triangle2)
+
+	plt.arrow(0.5, 6.4, 0, -2, length_includes_head=True,
+			head_width=0.1, head_length=0.1, color = 'red')
+
+	plt.plot(p,q, 'ob')
+	ax.set_aspect('equal', adjustable='box')
+	ax.set_xlabel("p (MPa)")
+	ax.set_ylabel("q (MPa)")
+	plt.title(titel)
 
 
-path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/UnitCell_2D/time_increment'
-os.mkdir(path)
+	plt.gca().set_frame_on(False)
+
+	plt.show()
+
+
+
+path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/UnitCell_2D/time_increment_dispControl/'
+try:
+	os.mkdir(path)
+except WindowsError:
+	pass
+
 os.chdir(path)
 delta_t = [1,5,25,150,500,750]
 
-for dt in delta_t:
-	ABQ_model(dt)
+for dt in delta_t[:3]:
+	#ABQ_model(dt)
+
+	odb = 'Creep_'+str(dt)+'.odb'
+	t,sd1,sd2,sd3,sd4 = PostProcess(odb)
+
+	with open('Result_'+odb[:-4]+'.dat','w') as fid:
+		for tti, s1,s2,s3,s4 in zip(t,sd1,sd2,sd3,sd4):
+			fid.wirte(str(tti)+'\t'+str(s1)+'\t'+str(s2)'\t'+str(s3)+'\t'+str(-s4)+'\n')
+	
+	Plot_Pq(-sd4,sd3)
+
 	
