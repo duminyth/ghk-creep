@@ -229,7 +229,7 @@ def Plot_Pq(p,q,titel):
 	return
 
 
-path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/UnitCell_2D/time_increment_dispControl/'
+path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/UnitCell_2D/time_increment_dispControl_2/'
 try:
 	os.mkdir(path)
 except WindowsError:

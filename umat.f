@@ -185,7 +185,7 @@
       N_CR     = PROPS(7)
       M_CR     = PROPS(8)   ! Erwartet M_CR <= 0 fuer Verfestigung
       ECR0     = PROPS(9)
-
+      IF (ECR0 .LT. ECR_MIN) ECR0 = ECR_MIN
 !     Assoziierte Flieβregel falls PSI=0
       IF (DABS(PSI_DP) .LT. TOL_PL) PSI_DP = ALPHA_DP
 
@@ -210,7 +210,7 @@
 
 !     Schutz: Kriechdehnung darf nicht negativ oder null sein
 !     change from EPBAR_CR = ECR_MIN to EPBAR_CR = 0
-      IF (EPBAR_CR .LT. ECR_MIN) EPBAR_CR = ZERO 
+      IF (EPBAR_CR .LT. ZERO) EPBAR_CR = ZERO 
 
 
 !=======================================================================
@@ -302,7 +302,7 @@
         ECR_EFF_MID = ECR_MID + ECR0
 
 !       Make sure the creep strain is strictely positive
-        IF (ECR_MID .LT. ECR_MIN) ECR_EFF_MID  = ECR_MIN
+        IF (ECR_EFF_MID .LT. ECR_MIN) ECR_EFF_MID  = ECR_MIN
 
 !       Define the increment of accumulated equivalent creep strain in the step
         DECR_BAR = A_CR * (Q_MID**N_CR) * (ECR_EFF_MID **M_CR) * DTIME
@@ -441,7 +441,7 @@
 !=======================================================================
 
 !     Definition of the yield function with the creep corrected stress
-      F_TR_CR = Q_CR - ALPHA_DP*P_CR - K_COH
+      F_TR_CR = Q_CR + ALPHA_DP*P_CR - K_COH
 
       IF (F_TR_CR .LE. TOL_PL) THEN
         PLASTIC = .FALSE.
