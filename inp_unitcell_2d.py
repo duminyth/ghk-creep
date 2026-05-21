@@ -179,9 +179,10 @@ def PostProcess(odb):
 	sdv2 = [[y for x, y in XY] for XY in xyd if 'SDV2' in XY.name]
 	sdv3 = [[y for x, y in XY] for XY in xyd if 'SDV3' in XY.name]
 	sdv4 = [[y for x, y in XY] for XY in xyd if 'SDV4' in XY.name]
+	sdv5 = [[y for x, y in XY] for XY in xyd if 'SDV5' in XY.name]
 	t    = [[x for x, y in XY] for XY in xyd if 'SDV4' in XY.name]
     
-	return t,sdv1, sdv2, sdv3,sdv4
+	return t,sdv1, sdv2, sdv3,sdv4, sdv5
 
 
 def Plot_Pq(p,q,titel):
@@ -242,11 +243,11 @@ for dt in delta_t[:3]:
 	#ABQ_model(dt)
 
 	odb = 'Creep_'+str(dt)+'.odb'
-	t,sd1,sd2,sd3,sd4 = PostProcess(odb)
+	t,sd1,sd2,sd3,sd4,sd5 = PostProcess(odb)
 
 	with open('Result_'+odb[:-4]+'.dat','w') as fid:
-		for tti, s1,s2,s3,s4 in zip(t[0],sd1[0],sd2[0],sd3[0],sd4[0]):
-			fid.write(str(s1)+"\t"+str(s1)+"\t"+str(s2)+'\t'+str(s3)+'\t'+str(-s4)+'\n')
+		for tti, s1,s2,s3,s4,s5 in zip(t[0],sd1[0],sd2[0],sd3[0],sd4[0], sd5[0]):
+			fid.write(str(s1)+"\t"+str(s1)+"\t"+str(s2)+'\t'+str(s3)+'\t'+str(-s4)+'\t'+str(s5)+'\n')
 	
 	Plot_Pq(-np.array(sd4[0]),sd3[0], 'dt='+str(dt))
 
