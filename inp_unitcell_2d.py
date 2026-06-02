@@ -172,7 +172,8 @@ def PostProcess(odb):
 	odbNew = str(path+odb[:-4])+'.odb'
 	odb_object = openOdb(odbNew)
 	session.viewports['Viewport: 1'].setValues(displayedObject=odb_object)
-	V = (('SDV1', INTEGRATION_POINT),('SDV2', INTEGRATION_POINT),('SDV3', INTEGRATION_POINT),('SDV4', INTEGRATION_POINT))
+	V = (('SDV1', INTEGRATION_POINT),('SDV2', INTEGRATION_POINT),('SDV3', INTEGRATION_POINT),('SDV4', INTEGRATION_POINT),('SDV5', INTEGRATION_POINT), ('LE', INTEGRATION_POINT, ((COMPONENT, 'LE22'),)))
+	
 	xyd = session.xyDataListFromField(odb = odb_object, outputPosition=ELEMENT_NODAL, variable = V, nodeSets = ('RBM',))
     
 	sdv1 = [[y for x, y in XY] for XY in xyd if 'SDV1' in XY.name]
@@ -180,9 +181,10 @@ def PostProcess(odb):
 	sdv3 = [[y for x, y in XY] for XY in xyd if 'SDV3' in XY.name]
 	sdv4 = [[y for x, y in XY] for XY in xyd if 'SDV4' in XY.name]
 	sdv5 = [[y for x, y in XY] for XY in xyd if 'SDV5' in XY.name]
+	LE 	 = [[y for x, y in XY] for XY in xyd if 'LE22' in   XY.name]
 	t    = [[x for x, y in XY] for XY in xyd if 'SDV4' in XY.name]
     
-	return t,sdv1, sdv2, sdv3,sdv4, sdv5
+	return t,sdv1, sdv2, sdv3,sdv4, sdv5, LE
 
 
 def Plot_Pq(p,q,titel):
@@ -191,7 +193,7 @@ def Plot_Pq(p,q,titel):
 	fig, ax = plt.subplots(figsize=(8*cm, 7*cm))
 	maxX = np.max(p)
 	maxq = np.max(q)
-
+    
 	ax.plot((0,0),(0,maxq*1.1),'-k')
 	ax.plot((0,0),(0,maxX*1.1),'-k')
 	ax.plot((maxq/np.tan(np.radians(71.57)),maxq),(0,0),'-k')
@@ -226,11 +228,146 @@ def Plot_Pq(p,q,titel):
 	plt.gca().set_frame_on(False)
 	plt.savefig(path+'pq_dt'+str(dt)+'.png', dpi=300)
     
-	plt.show()
+	
+	plt.close(fig)
 	return
 
 
-path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/UnitCell_2D/time_increment_dispControl_2/'
+def Plot_eps(e_pl,e_cr,titel):
+    
+	cm = 1 / 2.54
+	fig, ax = plt.subplots(figsize=(8*cm, 7*cm))
+
+    
+	plt.plot(e_pl,e_cr, 'ob')
+	ax.set_xlabel(r"$\varepsilon_\mathrm{pl}$")
+	ax.set_ylabel(r"$\varepsilon_\mathrm{cr}$")
+	plt.title(titel)
+    
+	ax.set_aspect('auto', adjustable='box')
+	plt.gca().set_frame_on(True)
+	plt.gca().ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+	plt.tight_layout()
+
+
+
+	plt.savefig(path+'eps_dt'+str(dt)+'.png', dpi=300, bbox_inches="tight")
+	
+	plt.close(fig)
+	return
+
+def Plot_check_0(t,eps_pl, eps_cr, q, p, Deps_cr):
+	cm = 1 / 2.54
+	fig, axes = plt.subplots(
+		4, 1,
+		sharex=True,
+		figsize=(8*cm, 8*cm)
+	)
+    
+	axes[0].plot(t, eps_pl)
+	axes[0].set_ylabel(r"$\varepsilon_\mathrm{pl}$")
+    
+	axes[1].plot(t, eps_cr)
+	axes[1].set_ylabel(r"$\varepsilon_\mathrm{cr}$")
+    
+	axes[2].plot(t, q)
+	axes[2].set_ylabel("q (MPa)")
+    
+	axes[3].plot(t, -np.array(p))
+	axes[3].set_ylabel("p(MPa)")
+	axes[3].set_xlabel("time(s)")
+    
+	for ax in axes:
+		ax.grid(True)
+    
+	plt.tight_layout()
+	plt.savefig(path+'Evolution_qty'+str(dt)+'.png', dpi=300)
+    
+	
+	plt.close(fig)
+    
+	cm = 1 / 2.54
+	fig, ax = plt.subplots(figsize=(8*cm, 7*cm))
+	ax.plot(t, Deps_cr)
+	ax.set_ylabel(r"$\Delta\varepsilon_\mathrm{cr}$")
+	ax.set_xlabel("$time(s)$")
+
+	ax.set_aspect('auto', adjustable='box')
+	plt.gca().set_frame_on(True)
+	plt.tight_layout()
+	plt.savefig(path+'DelatCreep'+str(dt)+'.png', dpi=300,bbox_inches="tight")
+	
+	plt.close(fig)
+
+
+
+	cm = 1 / 2.54
+	fig, ax = plt.subplots(figsize=(8*cm, 7*cm))
+	ax.plot(t, eps_cr)
+	ax.set_ylabel(r"$\varepsilon_\mathrm{cr}$")
+	ax.set_xlabel("$time(s)$")
+
+	ax.set_aspect('auto', adjustable='box')
+	plt.gca().set_frame_on(True)
+	plt.tight_layout()
+	plt.gca().ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+	plt.savefig(path+'Eps_Creep'+str(dt)+'.png', dpi=300,bbox_inches="tight")
+	
+	plt.close(fig)
+
+
+    
+	return
+
+
+def Plot_stress_all(results):
+	cm = 1 / 2.54
+	fig, axes = plt.subplots(
+		2, 1,
+		sharex=True,
+		figsize=(11*cm, 7*cm)
+	)
+	for res in results:
+		axes[0].plot(res[0], res[1], label=res[3])
+		axes[0].set_ylabel("q (MPa)")
+        
+		axes[1].plot(res[0], -np.array(res[2]), label=res[3])
+		axes[1].set_ylabel("p (MPa)")
+		axes[1].set_xlabel("time (s)")
+        
+		axes[1].legend()
+	plt.tight_layout()
+	
+	plt.savefig(path+'Evolution_pq_all.png', dpi=300)
+	
+	plt.close(fig)
+    
+    
+	
+    
+	fig, axes = plt.subplots(figsize=(11*cm, 4*cm))
+    
+	for res in results:
+		strain = np.array(res[4])+np.array(res[5])+np.array(res[6])
+		axes.plot(res[0], strain, label=res[3])
+		axes.set_ylabel(r"$\varepsilon_\mathrm{tot}$")
+        
+		axes.set_xlabel("time (s)")
+        
+		axes.legend()
+	plt.tight_layout()
+	
+	plt.savefig(path+'strain_all.png', dpi=300)
+	
+	plt.close(fig)
+    
+	return
+
+
+
+path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/UnitCell_2D/time_increment_umat_v2/1E-13/'
+path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/UnitCell_2D/time_increment_umat_v2/Effect_decr_sub/K=2000/'
+path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/UnitCell_2D/time_increment_umat_v2/Effect_ecr0/K_1000/'
 try:
 	os.mkdir(path)
 except WindowsError:
@@ -238,17 +375,58 @@ except WindowsError:
 
 os.chdir(path)
 delta_t = [1,5,25,150,500,750]
+delta_t = [2,6,10,12,15]
+delta_t = [12]
+p_all = []
+q_all = []
+if True:
+	for dt in delta_t[:1]:
+		#ABQ_model(dt)
+		
+		odb = 'E-'+str(dt)+'.odb'
+		#odb = 'Creep_'+str(dt)+'.odb'
+		t,sd1,sd2,sd3,sd4,sd5,LE = PostProcess(odb)
+		
+		with open('Result_'+odb[:-4]+'.dat','w') as fid:
+			for tti, s1,s2,s3,s4,s5 in zip(t[0],sd1[0],sd2[0],sd3[0],sd4[0], sd5[0]):
+				fid.write(str(tti)+"\t"+str(s1)+"\t"+str(s2)+'\t'+str(s3)+'\t'+str(-s4)+'\t'+str(s5)+'\n')
+		
+		p_all.append((t[0], sd3[0],sd4[0], dt,LE[0],sd1[0],sd2[0]))
+		
+		
+		Plot_Pq(-np.array(sd4[0]),sd3[0], 'dt='+str(dt))
+		Plot_eps(sd1[0],sd2[0], "")
+		Plot_check_0(t[0],sd1[0],sd2[0],sd3[0],sd4[0], sd5[0])
 
-for dt in delta_t[:3]:
-	#ABQ_model(dt)
+	Plot_stress_all(p_all)
 
-	odb = 'Creep_'+str(dt)+'.odb'
-	t,sd1,sd2,sd3,sd4,sd5 = PostProcess(odb)
 
-	with open('Result_'+odb[:-4]+'.dat','w') as fid:
-		for tti, s1,s2,s3,s4,s5 in zip(t[0],sd1[0],sd2[0],sd3[0],sd4[0], sd5[0]):
-			fid.write(str(s1)+"\t"+str(s1)+"\t"+str(s2)+'\t'+str(s3)+'\t'+str(-s4)+'\t'+str(s5)+'\n')
+
+
+
+
+delta_t = np.array([2,6,8,12,15,1e100])
+dtt = 10.**-delta_t
+
+if True:
+
+	CPU_time = np.array([6.79e2,6.78e2,6.69e2,6.67e2,7.82e2,7.25e2])/60.
+
+	cm = 1 / 2.54
+	fig, axes = plt.subplots(figsize=(12*cm, 6*cm))
+
+	axes.plot(dtt, CPU_time, '+-k')
+	axes.set_ylabel(r"CPU time (min)")
+	axes.set_yscale('log')
+	axes.set_xscale('log')
+
+	axes.set_xlabel(r"$\varepsilon_\mathrm{sub}$")
+	axes.set_xlabel(r"$\varepsilon_0^\mathrm{cr}$")
+	axes.set_yticks((10,15))
+	axes.set_xlim(-1,2*10**-2)
+
+	plt.tight_layout()
+
+	plt.savefig(path+'cpu_time.png', dpi=300)
 	
-	Plot_Pq(-np.array(sd4[0]),sd3[0], 'dt='+str(dt))
-
-	
+	plt.close("all")
