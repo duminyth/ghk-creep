@@ -191,14 +191,21 @@ def Plot_Pq(p,q,titel):
     
 	cm = 1 / 2.54
 	fig, ax = plt.subplots(figsize=(8*cm, 7*cm))
+
+	p = np.asarray(p)
+	q = np.asarray(q)
 	maxX = np.max(p)
 	maxq = np.max(q)
+
+
+	angle = np.radians(71.57)
+	p_yield_top = maxq / np.tan(angle)
 
 	ax.plot((0,0),(0,maxq*1.1),'-k')
 	ax.plot((0,0),(0,maxX*1.1),'-k')
 	ax.plot((maxq/np.tan(np.radians(71.57)),maxq),(0,0),'-k')
 	
-	if False:
+	if True:
 		points = [[0,0], [maxq/np.tan(np.radians(71.57)),maxq], [0, maxq]]
 		triangle = Polygon(points, fc=(1, 0, 0, 0.5), ec='red', lw=0)
 		ax.add_patch(triangle)
@@ -252,11 +259,12 @@ def Plot_Pq(p,q,titel):
     
 	plt.plot(p,q, 'ob')
 	ax.set_aspect('equal', adjustable='box')
+	ax.set_aspect('auto')
 	ax.set_xlabel("p (MPa)")
 	ax.set_ylabel("q (MPa)")
     
-	ax.plot((0,0),(0,maxq*1.1),'-k')
-	ax.plot((0,0),(0,maxX*1.1),'-k')
+	ax.plot((0,0), (0, maxq*1.1), '-k')
+	ax.plot((0,maxX*1.1), (0,0), '-k')
 	ax.plot((maxq/np.tan(np.radians(71.57)),maxq),(0,0),'-k')
 	ax.set_ylim(5,15)
 	ax.set_xlim(2.5,9)
@@ -267,6 +275,74 @@ def Plot_Pq(p,q,titel):
 	
 	plt.close(fig)
 	return
+
+
+from matplotlib.patches import Polygon
+
+def Plot_Pq2(p, q, titel, show_zones=True):
+    
+    cm = 1 / 2.54
+    fig, ax = plt.subplots(figsize=(10*cm, 7*cm))
+
+    p = np.asarray(p)
+    q = np.asarray(q)
+
+    maxp = np.max(p)
+    maxq = np.max(q)
+
+    angle = np.radians(71.57)
+    p_yield_top = maxq / np.tan(angle)
+
+    # Colored zones
+    if show_zones:
+        points_red = [
+            [0, 0],
+            [p_yield_top, maxq],
+            [0, maxq]
+        ]
+        triangle_red = Polygon(
+            points_red,
+            facecolor=(1, 0, 0, 0.25),
+            edgecolor='none'
+        )
+        ax.add_patch(triangle_red)
+
+        points_blue = [
+            [0, 0],
+            [p_yield_top, maxq],
+            [maxp, 0]
+        ]
+        triangle_blue = Polygon(
+            points_blue,
+            facecolor=(0, 0, 1, 0.20),
+            edgecolor='none'
+        )
+        ax.add_patch(triangle_blue)
+
+    # Axes
+    ax.plot([0, 0], [0, maxq*1.1], '-k', lw=1.0)
+    ax.plot([0, maxp*1.1], [0, 0], '-k', lw=1.0)
+
+    # Yield line
+    ax.plot([0, p_yield_top], [0, maxq], '-k', lw=1.2)
+
+    # Data
+    ax.plot(p, q, '-ob', markersize=2.0, linewidth=1.0)
+
+    ax.set_xlabel("p (MPa)")
+    ax.set_ylabel("q (MPa)")
+
+    ax.set_xlim(0, maxp*1.05)
+    ax.set_ylim(0, maxq*1.15)
+
+    ax.set_aspect('auto')
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    fig.tight_layout()
+    fig.savefig(path + str(titel) + '.png', dpi=300)
+    plt.close(fig)
 
 
 def Plot_eps(e_pl,e_cr,titel):
@@ -569,7 +645,7 @@ if True:
 				#ABQ_model(dt)
 				
 				odb = 'E-12.odb'
-				odb = 'k_2_5_3p.odb'
+				odb = 'k_2_5_3p_CompressionShear.odb'
 				#odb = 'Creep_'+str(dt)+'.odb'
 				t,sd1,sd2,sd3,sd4,sd5,LE = PostProcess(odb)
 				
@@ -580,9 +656,9 @@ if True:
 				p_all.append((t[0], sd3[0],sd4[0], dt,LE[0],sd1[0],sd2[0]))
 				
 				
-				Plot_Pq(-np.array(sd4[0]),sd3[0], '3p')
+				Plot_Pq2(-np.array(sd4[0]),sd3[0], '3p_CompressionShear')
 				Plot_eps(sd1[0],sd2[0], "")
-				Plot_check_0(t[0],sd1[0],sd2[0],sd3[0],sd4[0], sd5[0], '3p')
+				Plot_check_0(t[0],sd1[0],sd2[0],sd3[0],sd4[0], sd5[0], '3p_CompressionShear')
 	if False:
 		Plot_stress_all(p_all)
     
@@ -590,12 +666,12 @@ if True:
 	# ABQ model 
 
 	if False:
-		odb = 'Creep_Abq_0_5_3P.odb'
+		odb = 'Creep_Abq_0_5_3P_noDamp_CompressionShear.odb'
 		path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/Comparing_Method/UnitCell_Comparison_Jin/'
 		p,q,t = Extract_pq_ABQ_noUMAT(odb, path )
-		ceeq, peeq, ee,ce,pe = Extract_Strain_ABQ_Nothing(odb, path, '3_P')
-		Plot_Pq(-np.array(p),q, 'alpha_0_5_3P')
-		Plot_stress_strain(-np.array(p),q,ce,pe,ee,'stress_strain_curve')
+		ceeq, peeq, ee,ce,pe = Extract_Strain_ABQ_Nothing(odb, path, '3_P_noDamp_CompressionShear')
+		Plot_Pq(-np.array(p),q, 'alpha_0_5_3P_noDamp_CompressionShear')
+		Plot_stress_strain(-np.array(p),q,ce,pe,ee,'stress_strain_curve_noDamp_CompressionShear')
 
 
 	# Jin routine model 
