@@ -174,7 +174,8 @@ def PostProcess(odb):
 	session.viewports['Viewport: 1'].setValues(displayedObject=odb_object)
 	V = (('SDV1', INTEGRATION_POINT),('SDV2', INTEGRATION_POINT),('SDV3', INTEGRATION_POINT),('SDV4', INTEGRATION_POINT),('SDV5', INTEGRATION_POINT), ('LE', INTEGRATION_POINT, ((COMPONENT, 'LE22'),)))
 	
-	xyd = session.xyDataListFromField(odb = odb_object, outputPosition=ELEMENT_NODAL, variable = V, nodeSets = ('RBM',))
+	#xyd = session.xyDataListFromField(odb = odb_object, outputPosition=ELEMENT_NODAL, variable = V, nodeSets = ('RBM',))
+	xyd = session.xyDataListFromField(odb = odb_object, outputPosition=ELEMENT_NODAL, variable = V, nodeSets = ('PART-1-1.RBMC',))
     
 	sdv1 = [[y for x, y in XY] for XY in xyd if 'SDV1' in XY.name]
 	sdv2 = [[y for x, y in XY] for XY in xyd if 'SDV2' in XY.name]
@@ -624,7 +625,8 @@ def Plot_stress_strain(p,q,ce,pe,ee, titel):
 path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/UnitCell_2D/time_increment_umat_v2/1E-13/'
 path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/UnitCell_2D/time_increment_umat_v2/Effect_decr_sub/K=1000/'
 #path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/UnitCell_2D/time_increment_umat_v2/Effect_ecr0/K_1000/'
-path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/Comparing_Method/NewUMAT/'
+path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/Comparing_Method/NewUMAT/CompressionShear/'
+path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/UnitCell3D/'
 
 try:
 	os.mkdir(path)
@@ -645,7 +647,9 @@ if True:
 				#ABQ_model(dt)
 				
 				odb = 'E-12.odb'
-				odb = 'k_2_5_3p_CompressionShear.odb'
+				odb = 'k_2_5_1p_cs.odb'
+				odb = 'UniCell3D_Clamped_1C3S.odb'
+				odb = 'TwentySevenCell_3D.odb'
 				#odb = 'Creep_'+str(dt)+'.odb'
 				t,sd1,sd2,sd3,sd4,sd5,LE = PostProcess(odb)
 				
@@ -656,21 +660,26 @@ if True:
 				p_all.append((t[0], sd3[0],sd4[0], dt,LE[0],sd1[0],sd2[0]))
 				
 				
-				Plot_Pq2(-np.array(sd4[0]),sd3[0], '3p_CompressionShear')
+				Plot_Pq2(-np.array(sd4[0]),sd3[0], 'TwentySevenCell_3D')
+				Plot_Pq2(-np.array(sd4[0][:65]),sd3[0][:65], 'TwentySevenCell_3D_zoom')
 				Plot_eps(sd1[0],sd2[0], "")
-				Plot_check_0(t[0],sd1[0],sd2[0],sd3[0],sd4[0], sd5[0], '3p_CompressionShear')
+				Plot_check_0(t[0],sd1[0],sd2[0],sd3[0],sd4[0], sd5[0], 'TwentySevenCell_3D')
 	if False:
 		Plot_stress_all(p_all)
     
+	if True:
+		odb = 'G1_schachter.odb'
+		t,sd1,sd2,sd3,sd4,sd5,LE = PostProcess(odb)
     
 	# ABQ model 
 
 	if False:
-		odb = 'Creep_Abq_0_5_3P_noDamp_CompressionShear.odb'
+		odb = 'Creep_Abq_0_5_noDamp_CompressionShear.odb'
 		path = 'G:/01_Forschung/01_Creep/00_UMAT/UMAT_CLAUDE/Comparing_Method/UnitCell_Comparison_Jin/'
 		p,q,t = Extract_pq_ABQ_noUMAT(odb, path )
-		ceeq, peeq, ee,ce,pe = Extract_Strain_ABQ_Nothing(odb, path, '3_P_noDamp_CompressionShear')
-		Plot_Pq(-np.array(p),q, 'alpha_0_5_3P_noDamp_CompressionShear')
+		ceeq, peeq, ee,ce,pe = Extract_Strain_ABQ_Nothing(odb, path, '1_P_noDamp_CompressionShear')
+		Plot_Pq2(-np.array(p),q, 'alpha_0_5_1P_noDamp_CompressionShear')
+		Plot_Pq2(-np.array(p)[:65],q[:65], 'alpha_0_5_1P_noDamp_CompressionShear_zoomed')
 		Plot_stress_strain(-np.array(p),q,ce,pe,ee,'stress_strain_curve_noDamp_CompressionShear')
 
 

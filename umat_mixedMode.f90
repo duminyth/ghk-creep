@@ -52,11 +52,11 @@
 !   21  first plastic onset time, if NSTATV >= 21
 !=======================================================================
 
-      SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD,
-     1 RPL,DDSDDT,DRPLDE,DRPLDT,
-     2 STRAN,DSTRAN,TIME,DTIME,TEMP,DTEMP,PREDEF,DPRED,CMNAME,
-     3 NDI,NSHR,NTENS,NSTATV,PROPS,NPROPS,COORDS,DROT,PNEWDT,
-     4 CELENT,DFGRD0,DFGRD1,NOEL,NPT,LAYER,KSPT,JSTEP,KINC)
+      SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD, &
+      RPL,DDSDDT,DRPLDE,DRPLDT, &
+      STRAN,DSTRAN,TIME,DTIME,TEMP,DTEMP,PREDEF,DPRED,CMNAME, &
+      NDI,NSHR,NTENS,NSTATV,PROPS,NPROPS,COORDS,DROT,PNEWDT, &
+      CELENT,DFGRD0,DFGRD1,NOEL,NPT,LAYER,KSPT,JSTEP,KINC)
 
       INCLUDE 'ABA_PARAM.INC'
 
@@ -137,7 +137,7 @@
       IF (DABS(PSI_DP) .LT. TOL_PL) PSI_DP = ALPHA_DP
 
       DTIME_MAX_LOCAL = DTIME
-      DECR_MAX_SUB    = 1.De-12
+      DECR_MAX_SUB    = 1.D-12
 
 
       IF (NPROPS .GE. 14) THEN
@@ -218,16 +218,16 @@
       IF (THETA_PQ .LE. THETA_SWITCH_DEG) THEN
       W_SHEAR = ZERO
       ELSE
-      W_SHEAR = ((THETA_PQ - THETA_SWITCH_DEG) /
-        1      (THETA_SHEAR_DEG - THETA_SWITCH_DEG))**B_POW
+      W_SHEAR = ((THETA_PQ - THETA_SWITCH_DEG) / &
+              (THETA_SHEAR_DEG - THETA_SWITCH_DEG))**B_POW
       IF (W_SHEAR .LT. ZERO) W_SHEAR = ZERO
       IF (W_SHEAR .GT. ONE)  W_SHEAR = ONE
       END IF
 
 
 
-      IF (A_CR .GT. ZERO .AND. DTIME .GT. ZERO .AND.
-     1    Q_TR .GT. TOL_CR) THEN
+        IF ((A_COMP .GT. ZERO .OR. A_SHEAR .GT. ZERO) .AND. &
+            DTIME .GT. ZERO .AND. Q_TR .GT. TOL_CR) THEN
         ECR_EFF_MID = EPBAR_CR + ECR0
         IF (ECR_EFF_MID .LT. ECR_MIN) ECR_EFF_MID=ECR_MIN
         
@@ -242,21 +242,21 @@
         IF (THETA_PQ .LE. THETA_SWITCH_DEG) THEN
         W_SHEAR = ZERO
         ELSE
-        W_SHEAR = ((THETA_PQ - THETA_SWITCH_DEG) /
-          1      (THETA_SHEAR_DEG - THETA_SWITCH_DEG))**B_POW
+        W_SHEAR = ((THETA_PQ - THETA_SWITCH_DEG) / &
+                (THETA_SHEAR_DEG - THETA_SWITCH_DEG))**B_POW
         IF (W_SHEAR .LT. ZERO) W_SHEAR = ZERO
         IF (W_SHEAR .GT. ONE)  W_SHEAR = ONE
         END IF
 
-        ECRDOT_COMP =
-            1 A_COMP*(Q_TR**N_COMP)*(ECR_EFF_MID**M_COMP)
+        ECRDOT_COMP = &
+             A_COMP*(Q_TR**N_COMP)*(ECR_EFF_MID**M_COMP) 
 
-        ECRDOT_SHEAR =
-            1 A_SHEAR*(Q_TR**N_SHEAR)*(ECR_EFF_MID**M_SHEAR)
+        ECRDOT_SHEAR = &
+              A_SHEAR*(Q_TR**N_SHEAR)*(ECR_EFF_MID**M_SHEAR)
 
-        DECR_BAR =
-            1 ((ONE-W_SHEAR)*ECRDOT_COMP
-            2 + W_SHEAR*ECRDOT_SHEAR)*DTIME
+        DECR_BAR = &
+              ((ONE-W_SHEAR)*ECRDOT_COMP &
+              + W_SHEAR*ECRDOT_SHEAR)*DTIME
 
 
         IF (DECR_BAR .GT. DECR_MAX_SUB) THEN
@@ -295,22 +295,31 @@
         IF (THETA_PQ .LE. THETA_SWITCH_DEG) THEN
         W_SHEAR = ZERO
         ELSE
-        W_SHEAR = ((THETA_PQ - THETA_SWITCH_DEG) /
-        1      (THETA_SHEAR_DEG - THETA_SWITCH_DEG))**B_POW
+        W_SHEAR = ((THETA_PQ - THETA_SWITCH_DEG) / &
+               (THETA_SHEAR_DEG - THETA_SWITCH_DEG))**B_POW
         IF (W_SHEAR .LT. ZERO) W_SHEAR = ZERO
         IF (W_SHEAR .GT. ONE)  W_SHEAR = ONE
         END IF
 
 !       Creep correction
-        CR_ACTIVE = (DTSUB .GT. ZERO) .AND. (A_CR .GT. ZERO) .AND.
-     1              (Q_TR .GT. TOL_CR)
+        CR_ACTIVE = (DTSUB .GT. ZERO) .AND. &
+                    (A_COMP .GT. ZERO .OR. A_SHEAR .GT. ZERO) .AND. &
+                    (Q_TR .GT. TOL_CR)
         DECR_BAR = ZERO
 
         IF (CR_ACTIVE) THEN
           Q_MID = Q_TR
           ECR_EFF_MID = EPBAR_CR + ECR0
           IF (ECR_EFF_MID .LT. ECR_MIN) ECR_EFF_MID=ECR_MIN
-          DECR_BAR = A_CR*(Q_MID**N_CR)*(ECR_EFF_MID**M_CR)*DTSUB
+
+
+          ECRDOT_COMP = A_COMP*(Q_MID**N_COMP)*(ECR_EFF_MID**M_COMP)
+
+          ECRDOT_SHEAR = A_SHEAR*(Q_MID**N_SHEAR)*(ECR_EFF_MID**M_SHEAR)
+
+          ECRDOT = (ONE-W_SHEAR)*ECRDOT_COMP + W_SHEAR*ECRDOT_SHEAR
+
+          DECR_BAR = ECRDOT*DTSUB
 
           IF (DECR_BAR .GT. Q_TR/(THREE*MU+TOL_CR)) THEN
             DECR_BAR = Q_TR/(THREE*MU+TOL_CR)*0.9D0
@@ -324,36 +333,36 @@
             ECR_EFF_MID = ECR_MID + ECR0
             IF (ECR_EFF_MID .LT. ECR_MIN) ECR_EFF_MID=ECR_MIN
 
-            ECRDOT_COMP =
-                1 A_COMP*(Q_MID**N_COMP)*(ECR_EFF_MID**M_COMP)
+            ECRDOT_COMP = &
+                  A_COMP*(Q_MID**N_COMP)*(ECR_EFF_MID**M_COMP)
 
-            ECRDOT_SHEAR =
-                1 A_SHEAR*(Q_MID**N_SHEAR)*(ECR_EFF_MID**M_SHEAR)
+            ECRDOT_SHEAR = &
+                  A_SHEAR*(Q_MID**N_SHEAR)*(ECR_EFF_MID**M_SHEAR)
 
-            ECRDOT = (ONE-W_SHEAR)*ECRDOT_COMP
-                1   + W_SHEAR*ECRDOT_SHEAR
+            ECRDOT = (ONE-W_SHEAR)*ECRDOT_COMP &
+                    + W_SHEAR*ECRDOT_SHEAR
 
 
             RES = DECR_BAR - ECRDOT*DTSUB
 
             IF (DABS(RES) .LT. TOL_NR*(ONE+DECR_BAR)) GOTO 100
 
-            DRES = ONE - DTSUB*(
-                1 (ONE-W_SHEAR)*
-                2 (
-                3   A_COMP*N_COMP*(Q_MID**(N_COMP-ONE))*(-THREE*MU)
-                4   *(ECR_EFF_MID**M_COMP)
-                5 + A_COMP*(Q_MID**N_COMP)*M_COMP
-                6   *(ECR_EFF_MID**(M_COMP-ONE))*HALF
-                7 )
-                8 + W_SHEAR*
-                9 (
-                1   A_SHEAR*N_SHEAR*(Q_MID**(N_SHEAR-ONE))*(-THREE*MU)
-                2   *(ECR_EFF_MID**M_SHEAR)
-                3 + A_SHEAR*(Q_MID**N_SHEAR)*M_SHEAR
-                4   *(ECR_EFF_MID**(M_SHEAR-ONE))*HALF
-                5 )
-                6 )
+            DRES = ONE - DTSUB*( &
+                  (ONE-W_SHEAR)* &
+                  ( &
+                    A_COMP*N_COMP*(Q_MID**(N_COMP-ONE))*(-THREE*MU) &
+                    *(ECR_EFF_MID**M_COMP) &
+                  + A_COMP*(Q_MID**N_COMP)*M_COMP &
+                    *(ECR_EFF_MID**(M_COMP-ONE))*HALF &
+                  ) &
+                  + W_SHEAR* &
+                  ( &
+                    A_SHEAR*N_SHEAR*(Q_MID**(N_SHEAR-ONE))*(-THREE*MU) &
+                    *(ECR_EFF_MID**M_SHEAR) &
+                  + A_SHEAR*(Q_MID**N_SHEAR)*M_SHEAR &
+                    *(ECR_EFF_MID**(M_SHEAR-ONE))*HALF &
+                  ) &
+                  )
 
             IF (DABS(DRES) .LT. TOL_CR) DRES=ONE
             DECR_IT = -RES/DRES
